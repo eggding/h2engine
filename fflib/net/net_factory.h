@@ -12,6 +12,7 @@
 #include "base/thread.h"
 #include "net/codec.h"
 #include "net/msg_sender.h"
+#include "base/log.h"
 
 namespace ff {
 
@@ -56,7 +57,7 @@ public:
             if (false == started_flag)
             {
             	#ifdef _WIN32
-            	WSADATA wsaData;  
+            	WSADATA wsaData;
 				WSAStartup(MAKEWORD(1,1),&wsaData);
             	#endif
                 assert(thread_num_ > 0);
@@ -64,7 +65,6 @@ public:
                 tg = new TaskQueuePool(thread_num_);
                 thread.create_thread(Task(&runEpoll, this), 1);
                 thread.create_thread(TaskQueuePool::gen_task(tg), thread_num_);
-                printf("net factory start ok\n");
             }
         }
         void stop()
@@ -102,9 +102,9 @@ public:
     {
         Singleton<NetData>::instance().start();
         AcceptorLinux* ret = new AcceptorLinux(&(Singleton<NetData>::instance().epoll),
-                                                   msg_handler_, 
+                                                   msg_handler_,
                                                    (Singleton<NetData>::instance().tg));
-        
+
         if (ret->open(host_))
         {
             delete ret;
@@ -117,9 +117,9 @@ public:
     {
         Singleton<NetData>::instance().start();
         AcceptorLinux* ret = new AcceptorLinuxGate(&(Singleton<NetData>::instance().epoll),
-                                                   msg_handler_, 
+                                                   msg_handler_,
                                                    (Singleton<NetData>::instance().tg));
-        
+
         if (ret->open(host_))
         {
             delete ret;
@@ -132,9 +132,9 @@ public:
     {
         Singleton<NetData>::instance().start();
         AcceptorLinuxGate* ret = new AcceptorLinuxGate(&(Singleton<NetData>::instance().epoll),
-                                                   msg_handler_, 
+                                                   msg_handler_,
                                                    (Singleton<NetData>::instance().tg));
-        
+
         if (ret->open(arg_helper))
         {
             delete ret;
@@ -143,8 +143,8 @@ public:
         Singleton<NetData>::instance().allAcceptor.push_back(ret);
         return ret;
     }
-    
-    static SocketPtr connect(const std::string& host_, MsgHandler* msg_handler_)
+
+    static SocketObjPtr connect(const std::string& host_, MsgHandler* msg_handler_)
     {
         Singleton<NetData>::instance().start();
         return Connector::connect(host_, &(Singleton<NetData>::instance().epoll), msg_handler_,
@@ -155,4 +155,3 @@ public:
 }
 
 #endif
-

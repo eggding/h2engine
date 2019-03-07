@@ -70,11 +70,11 @@ int Select::runLoop()
 			continue;
 		}
 		fd_del_callback();
-		for (int i = 0; i < tmpset.fd_count; i++ )
+		for (size_t i = 0; i < tmpset.fd_count; i++ )
 		{
 			if (FD_ISSET(tmpset.fd_array[i], &tmpset))
 			{
-			   map<SocketFd, Fd*>::iterator it = m_fd2ptr.find(tmpset.fd_array[i]);
+			   std::map<SocketFd, Fd*>::iterator it = m_fd2ptr.find(tmpset.fd_array[i]);
 			   if (it!= m_fd2ptr.end()){
 			   		Fd* fd_ptr = it->second;
 					fd_ptr->handleEpollRead();
@@ -143,16 +143,16 @@ int Select::close()
     return 0;
 }
 
-int Select::register_fd(Fd* fd_ptr_)
+int Select::registerfd(Fd* fd_ptr_)
 {
 	LockGuard lock(m_mutex);
     FD_SET(fd_ptr_->socket(), &m_fdread);
     m_fd2ptr[fd_ptr_->socket()] = fd_ptr_;
-    //printf("elect_t::register_fd %d\n", fd_ptr_->socket());
+    //printf("elect_t::registerfd %d\n", fd_ptr_->socket());
     return 0;
 }
 
-int Select::unregister_fd(Fd* fd_ptr_)
+int Select::unregisterfd(Fd* fd_ptr_)
 {
 	LockGuard lock(m_mutex);
 	if  (m_fd2ptr.find(fd_ptr_->socket()) == m_fd2ptr.end())
@@ -160,13 +160,13 @@ int Select::unregister_fd(Fd* fd_ptr_)
 	int ret = 0;
 	FD_CLR(fd_ptr_->socket(), &m_fdread);
 	m_fd2ptr.erase(fd_ptr_->socket());
-	//printf("elect_t::unregister_fd %d\n", fd_ptr_->socket());
+	//printf("elect_t::unregisterfd %d\n", fd_ptr_->socket());
 	m_error_fd_set.push_back(fd_ptr_);
 	interupt_loop();
     return ret;
 }
 
-int Select::mod_fd(Fd* fd_ptr_)
+int Select::modfd(Fd* fd_ptr_)
 {
     return 0;
 }
@@ -174,7 +174,7 @@ int Select::mod_fd(Fd* fd_ptr_)
 void Select::fd_del_callback()
 {
     LockGuard lock(m_mutex);
-    list<Fd*>::iterator it = m_error_fd_set.begin();
+    std::list<Fd*>::iterator it = m_error_fd_set.begin();
     for (; it != m_error_fd_set.end(); ++it)
     {
         (*it)->handleEpollDel();

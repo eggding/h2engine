@@ -16,11 +16,11 @@ namespace ff {
 class MsgSender
 {
 public:
-    static void send(SocketPtr pSocket, uint16_t cmd_, const std::string& str_)
+    static void send(SocketObjPtr& pSocket, uint16_t cmd_, const std::string& str_)
     {
         if (pSocket)
         {
-            if (0 == pSocket->get_sc()->get_type())
+            if (0 == pSocket->getSocketCtrl()->get_type())
             {
                 MessageHead h(cmd_);
                 h.size = str_.size();
@@ -31,19 +31,24 @@ public:
             }
             else
             {
-                char msg[128] = {0};
-                snprintf(msg, sizeof(msg), "cmd:%u\n", (uint32_t)cmd_);
-                std::string dest(msg);
-                dest += str_;
-                pSocket->asyncSend(dest);
+                if (cmd_ != 0){
+                    char msg[128] = {0};
+                    snprintf(msg, sizeof(msg), "cmd:%u\n", (uint32_t)cmd_);
+                    std::string dest(msg);
+                    dest += str_;
+                    pSocket->asyncSend(dest);
+                }
+                else{
+                    pSocket->asyncSend(str_);
+                }
             }
         }
     }
-    static void send(SocketPtr pSocket, uint16_t cmd_, Codec& msg_)
+    static void send(SocketObjPtr& pSocket, uint16_t cmd_, Codec& msg_)
     {
         if (pSocket)
         {
-            if (0 == pSocket->get_sc()->get_type())
+            if (0 == pSocket->getSocketCtrl()->get_type())
             {
                 std::string body = msg_.encode_data();
                 MessageHead h(cmd_);
@@ -51,7 +56,7 @@ public:
                 h.hton();
                 std::string dest((const char*)&h, sizeof(h));
                 dest += body;
-    
+
                 pSocket->asyncSend(dest);
             }
             else
@@ -64,14 +69,14 @@ public:
             }
         }
     }
-    static void send(SocketPtr pSocket, const std::string& str_)
+    static void send(SocketObjPtr& pSocket, const std::string& str_)
     {
         if (pSocket)
         {
             pSocket->asyncSend(str_);
         }
     }
-    static void sendToClient(SocketPtr pSocket, Codec& msg_)
+    static void sendToClient(SocketObjPtr& pSocket, Codec& msg_)
     {
         if (pSocket)
         {

@@ -17,6 +17,7 @@
 #include "base/log.h"
 
 using namespace ff;
+using namespace std;
 
 SocketWin::SocketWin(EventLoop* e_, SocketCtrlI* seh_, SocketFd fd_, TaskQueue* tq_):
     m_epoll(e_),
@@ -48,7 +49,7 @@ void SocketWin::close_impl()
 {
     if (m_fd > 0)
     {
-        m_epoll->unregister_fd(this);
+        m_epoll->unregisterfd(this);
         SocketOp::close(m_fd);
         m_fd = 0;
     }
@@ -99,7 +100,7 @@ int SocketWin::handleEpollRead_impl()
     {
         int nread = 0;
         char recv_buffer[RECV_BUFFER_SIZE];
-        
+
         do
         {
             nread = ::read(m_fd, recv_buffer, sizeof(recv_buffer) - 1);
@@ -133,7 +134,7 @@ int SocketWin::handleEpollRead_impl()
                     return -1;
                 }
             }
-            
+
         } while(1);
     }
     return 0;
@@ -141,7 +142,7 @@ int SocketWin::handleEpollRead_impl()
 
 int SocketWin::handleEpollDel()
 {
-    m_tq->post(TaskBinder::gen(&SocketCtrlI::handleError, this->get_sc(), this));
+    m_tq->post(TaskBinder::gen(&SocketCtrlI::handleError, this->getSocketCtrl(), this));
     return 0;
 }
 
@@ -204,7 +205,7 @@ void SocketWin::send_impl(const string& buff_src, int flag)
     {
         return;
     }
-    
+
     ff_str_buffer_t new_buff;
     new_buff.buff = buff_;
     new_buff.flag = flag;
@@ -214,7 +215,7 @@ void SocketWin::send_impl(const string& buff_src, int flag)
         m_send_buffer.push_back(new_buff);
         return;
     }
-    
+
     int ret = do_send(&new_buff);
 
     if (ret < 0)
@@ -271,20 +272,14 @@ int SocketWin::do_send(ff_str_buffer_t* buff_)
 
 void SocketWin::asyncRecv()
 {
-    m_epoll->register_fd(this);
+    m_epoll->registerfd(this);
 }
 
-void SocketWin::safeDelete()
-{
-	//printf("SocketWin::safeDelete %p\n", this);
-    struct lambda_t
-    {
-        static void exe(void* p_)
-        {
-            delete ((SocketWin*)p_);
-        }
-    };
-    m_tq->post(Task(&lambda_t::exe, this));
+SharedPtr<SocketI> SocketWin::toSharedPtr(){
+    return m_refSocket;
+}
+
+void SocketWin::refSelf(SharedPtr<SocketI> p){
+    m_refSocket = p;
 }
 #endif
-

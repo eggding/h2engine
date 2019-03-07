@@ -12,8 +12,10 @@
 #include <iostream>
 #include <map>
 #include <set>
+#ifndef _WIN32
 #include <endian.h>
 #include <byteswap.h>
+#endif
 
 
 #include "net/message.h"
@@ -33,6 +35,18 @@ namespace apache
     }
 }
 namespace ff {
+#ifdef _WIN32
+
+#define __bswap_64(val) (((val) >> 56) |\
+                    (((val) & 0x00ff000000000000ll) >> 40) |\
+                    (((val) & 0x0000ff0000000000ll) >> 24) |\
+                    (((val) & 0x000000ff00000000ll) >> 8)   |\
+                    (((val) & 0x00000000ff000000ll) << 8)   |\
+                    (((val) & 0x0000000000ff0000ll) << 24) |\
+                    (((val) & 0x000000000000ff00ll) << 40) |\
+                    (((val) << 56)))
+
+#endif
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     #define hton64(ll) (__bswap_64(ll))
@@ -80,7 +94,7 @@ public:
     }
     inline BinEncoder& copy_value(const std::string& str_)
     {
-        uint32_t str_size =::htonl( str_.size());
+        uint32_t str_size =htonl( str_.size());
         copy_value((const char*)(&str_size), sizeof(str_size));
         copy_value(str_.data(), str_.size());
         return *this;
@@ -127,7 +141,7 @@ public:
     {
         uint32_t str_len = 0;
         copy_value(&str_len, sizeof(str_len));
-        str_len = ::ntohl(str_len);
+        str_len = ntohl(str_len);
 
         if (m_remaindered < str_len)
         {
